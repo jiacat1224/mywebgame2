@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>바다마을 키우기 🪸 RPG</title>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+        :root {
+            --pastel-sky: #f7d6e0;
+            --pastel-pink: #f2b5d4;
+            --pastel-purple: #c7ceea;
+            --pastel-blue: #b5ead7;
+            --pastel-yellow: #ffdac1;
+            --text-dark: #3d3b4e;
+            --card-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            font-family: 'Pretendard', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #1e1b2e;
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 1050px;
+            height: 700px;
+            background: linear-gradient(135deg, #2b233d 0%, #1e1b2e 100%);
+            border-radius: 28px;
+            border: 4px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 캐릭터 선택 화면 (몽환적 핑크/퍼플 감성) */
+        #char-select-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, #e8b4b8 0%, #eed6d3 40%, #a992b6 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            color: #3d3b4e;
+            text-align: center;
+        }
+
+        #char-select-screen h1 {
+            font-size: 2.6rem;
+            margin-bottom: 12px;
+            color: #fff;
+            text-shadow: 0 4px 12px rgba(181, 131, 141, 0.6);
+        }
+
+        #char-select-screen p {
+            color: #4a3e4d;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        .char-options {
+            display: flex;
+            gap: 30px;
+            margin-top: 35px;
+        }
+
+        .char-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 26px;
+            width: 210px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 3px solid transparent;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+
+        .char-card:hover {
+            transform: translateY(-10px);
+            border-color: #f2b5d4;
+            box-shadow: 0 15px 30px rgba(242, 181, 212, 0.4);
+            background: #ffffff;
+        }
+
+        .char-avatar {
+            width: 95px;
+            height: 95px;
+            border-radius: 50%;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 52px;
+            background: linear-gradient(135deg, #e8b4b8 0%, #c7ceea 100%);
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.8);
+        }
+
+        /* 상단 UI 헤더 */
+        header {
+            padding: 12px 26px;
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(12px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            z-index: 20;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .stats-group {
+            display: flex;
+            gap: 14px;
+            align-items: center;
+        }
+
+        .currency-box {
+            background: rgba(255, 255, 255, 0.85);
+            color: #5d4037;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .icon-btn {
+            background: rgba(255, 255, 255, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        .icon-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .icon-btn.active {
+            background: #ffb7b2;
+            color: #5d2e46;
+            border-color: #fff;
+        }
+
+        /* 메인 게임 본문 */
+        .main-body {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 2D 캔버스 지도 */
+        #gameCanvas {
+            flex: 1;
+            cursor: crosshair;
+        }
+
+        /* 우측 사이드 패널 (일러스트풍 프레임) */
+        .side-panel {
+            width: 320px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            gap: 12px;
+            border-left: 3px solid rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+
+        .panel-title {
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: #5c5470;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 18px;
+            padding: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .item-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+
+        .item-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fbf7f6;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            border: 1px solid #f0e6e5;
+        }
+
+        .btn-action {
+            background: linear-gradient(135deg, #e2f0cb 0%, #b5ead7 100%);
+            border: none;
+            padding: 10px;
+            border-radius: 14px;
+            font-weight: bold;
+            color: #3b5249;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            box-shadow: 0 3px 8px rgba(181, 234, 215, 0.4);
+        }
+
+        .btn-action:hover {
+            filter: brightness(0.97);
+            transform: translateY(-1px);
+        }
+
+        .btn-action:disabled {
+            background: #e0e0e0;
+            color: #999;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 탐사 일지 로그 */
+        .log-box {
+            flex: 1;
+            background: #f7f5f9;
+            border-radius: 12px;
+            padding: 10px;
+            font-size: 0.85rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 4px;
+            border: 1px solid #eae5ef;
+        }
+
+        .log-item {
+            padding: 2px 0;
+            border-bottom: 1px dashed #e0d8e7;
+            color: #6c5ce7;
+        }
+
+        /* 컨트롤 패드 */
+        .controls-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            z-index: 15;
+            opacity: 0.85;
+        }
+
+        .dpad-row {
+            display: flex;
+            gap: 5px;
+        }
+
+        .dpad-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 2px solid #fff;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: #5c5470;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .dpad-btn:active {
+            background: #fff;
+        }
+
+        /* 이벤트 알림 모달 */
+        #event-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 26px;
+            border-radius: 26px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+            text-align: center;
+            z-index: 50;
+            display: none;
+            opacity: 0;
+            transition: all 0.3s ease;
+            width: 330px;
+            border: 2px solid #fff;
+        }
+
+        #event-modal.active {
+            display: block;
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #event-modal h3 {
+            color: #6c5ce7;
+            margin: 10px 0;
+        }
+
+        #event-modal p {
+            font-size: 0.95rem;
+            color: #555;
+            margin-bottom: 18px;
+            line-height: 1.4;
+        }
+
+        #event-modal button {
+            background: linear-gradient(135deg, #c7ceea 0%, #e8b4b8 100%);
+            border: none;
+            padding: 10px 26px;
+            border-radius: 16px;
+            font-weight: bold;
+            color: #4a3e4d;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 1. 캐릭터 선택 모달 (파스텔 일러스트 감성) -->
+        <div id="char-select-screen">
+            <h1>🪸 바다마을 키우기 🐳</h1>
+            <p>몽환적인 노을빛 바닷속 산호초 숲에 오신 것을 환영합니다!<br>캐릭터를 직접 조작해 보물을 찾고 마을을 따뜻하게 확장해보세요.</p>
+            <div class="char-options">
+                <div class="char-card" onclick="selectCharacter('female')">
+                    <div class="char-avatar">🧜‍♀️</div>
+                    <h3>바다 소녀</h3>
+                    <span style="font-size:0.85rem; color:#777; margin-top:6px;">산호 드레스를 입은 신비로운 소녀</span>
+                </div>
+                <div class="char-card" onclick="selectCharacter('male')">
+                    <div class="char-avatar">🧜‍♂️</div>
+                    <h3>바다 소년</h3>
+                    <span style="font-size:0.85rem; color:#777; margin-top:6px;">조개 장식을 한 탐험가 소년</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. 상단 헤더 UI -->
+        <header>
+            <div class="user-info">
+                <span id="player-avatar-display">🧜‍♀️</span>
+                <span id="player-name-display">탐험가</span>
+                <span style="font-size: 0.85rem; background: rgba(255,255,255,0.3); padding: 4px 12px; border-radius: 14px; margin-left: 6px;" id="village-title-badge">작은 산호 조각</span>
+            </div>
+            <div class="stats-group">
+                <div class="currency-box">
+                    <span>🪸 산호초 조각:</span>
+                    <span id="coral-count">0</span>
+                </div>
+                <button class="icon-btn" id="auto-btn" onclick="toggleAutoExploration()">🤖 자동 탐사: OFF</button>
+                <button class="icon-btn" id="bgm-btn" onclick="toggleBGM()">🎵 BGM: OFF</button>
+            </div>
+        </header>
+
+        <!-- 3. 메인 게임 영역 (RPG 캔버스 + 패널) -->
+        <div class="main-body">
+            <!-- 2D 일러스트풍 캔버스 -->
+            <canvas id="gameCanvas" width="730" height="630"></canvas>
+
+            <!-- 방향키 가상 조작 버튼 -->
+            <div class="controls-overlay">
+                <div class="dpad-btn" onmousedown="handleDpad('up')" onmouseup="stopDpad()" ontouchstart="handleDpad('up')" ontouchend="stopDpad()">▲</div>
+                <div class="dpad-row">
+                    <div class="dpad-btn" onmousedown="handleDpad('left')" onmouseup="stopDpad()" ontouchstart="handleDpad('left')" ontouchend="stopDpad()">◄</div>
+                    <div class="dpad-btn" onmousedown="handleDpad('down')" onmouseup="stopDpad()" ontouchstart="handleDpad('down')" ontouchend="stopDpad()">▼</div>
+                    <div class="dpad-btn" onmousedown="handleDpad('right')" onmouseup="stopDpad()" ontouchstart="handleDpad('right')" ontouchend="stopDpad()">►</div>
+                </div>
+            </div>
+
+            <!-- 우측 사이드 패널 -->
+            <div class="side-panel">
+                <!-- 보물 상점 -->
+                <div class="panel-box">
+                    <div class="panel-title">
+                        <span>🛒 조개 상점</span>
+                        <span style="font-size: 0.8rem; font-weight: normal; color: #888;">수집한 보물 팔기</span>
+                    </div>
+                    <div class="item-list" id="inventory-list">
+                        <!-- 동적 생성 -->
+                    </div>
+                </div>
+
+                <!-- 마을 성장 단계 -->
+                <div class="panel-box">
+                    <div class="panel-title">
+                        <span>🏗️ 마을 성장</span>
+                        <span style="font-size: 0.8rem; color: #888;" id="stage-step-text">1 / 8 단계</span>
+                    </div>
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.95rem; color: #4a3e4d;" id="next-stage-name">작은 산호 집 만들기</div>
+                        <div style="font-size: 0.8rem; color: #777; margin-top: 2px;" id="next-stage-desc">필요 산호초 조각: 40개</div>
+                    </div>
+                    <button class="btn-action" id="upgrade-btn" onclick="upgradeVillage()">마을 확장하기 (40 🪸)</button>
+                </div>
+
+                <!-- 바다 일지 로그 -->
+                <div class="panel-box" style="flex: 1; overflow: hidden;">
+                    <div class="panel-title">📜 바다 탐사 일지</div>
+                    <div class="log-box" id="explore-log">
+                        <div class="log-item">방향키(WASD)로 헤엄쳐 바닷속 보물을 모아보세요!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. 이벤트 모달 -->
+        <div id="event-modal">
+            <div id="event-icon" style="font-size: 45px;">✨</div>
+            <h3 id="event-title">발견!</h3>
+            <p id="event-desc">설명 내용</p>
+            <button onclick="closeModal()">확인</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 게임 데이터 ---
+        const gameState = {
+            playerGender: 'female',
+            coralPieces: 0,
+            villageStage: 1, // 총 8단계
+            autoExplore: false,
+            bgmEnabled: false,
+            inventory: {
+                shell: 0,       // 일반 조개
+                sora: 0,        // 예쁜 소라
+                pearl: 0,       // 펄 조개
+                starfish: 0,    // 불가사리
+                rareTurtle: 0   // 무지개 등껍질
+            }
+        };
+
+        const itemData = {
+            shell: { name: "조개 조각", icon: "🐚", price: 8 },
+            sora: { name: "예쁜 소라", icon: "🐚", price: 20 },
+            pearl: { name: "반짝이는 펄 조개", icon: "🦪", price: 50 },
+            starfish: { name: "무지개 불가사리", icon: "⭐️", price: 100 },
+            rareTurtle: { name: "전설 등껍질", icon: "🐢", price: 250 }
+        };
+
+        // 세분화된 마을 성장 단계 (비주얼 요소 확충)
+        const stageData = [
+            { stage: 1, name: "작은 산호 터", icon: "🪸", cost: 40, speedBonus: 0, radius: 35, decos: ["🪸"] },
+            { stage: 2, name: "작은 산호 집", icon: "🪸🏡", cost: 120, speedBonus: 0.4, radius: 48, decos: ["🪸", "🌿"] },
+            { stage: 3, name: "산호 정원", icon: "🏡🌸", cost: 300, speedBonus: 0.7, radius: 60, decos: ["🪸", "🌿", "🌸"] },
+            { stage: 4, name: "바다 쉼터 마을", icon: "🏡🏘️", cost: 800, speedBonus: 1.0, radius: 72, decos: ["🪸", "🌿", "🌸", "⭐"] },
+            { stage: 5, name: "몽환의 바다 도시", icon: "🏰✨", cost: 2000, speedBonus: 1.3, radius: 85, decos: ["🪸", "🌿", "🌸", "⭐", "💎"] },
+            { stage: 6, name: "파스텔 산호 수도", icon: "🏰👑", cost: 5000, speedBonus: 1.6, radius: 98, decos: ["🪸", "🌿", "🌸", "⭐", "💎", "🏛️"] },
+            { stage: 7, name: "신비한 바다 제국", icon: "👑🏰🌊", cost: 12000, speedBonus: 1.9, radius: 110, decos: ["🪸", "🌿", "🌸", "⭐", "💎", "🏛️", "🔮"] },
+            { stage: 8, name: "전설의 파스텔 왕국", icon: "👑✨🐳", cost: Infinity, speedBonus: 2.3, radius: 125, decos: ["🪸", "🌿", "🌸", "⭐", "💎", "🏛️", "🔮", "✨"] }
+        ];
+
+        // --- 캔버스 RPG 월드 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 플레이어 캐릭터 데이터 (생동감 있는 이동 및 유기적 애니메이션)
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2 + 120,
+            baseSpeed: 2.6,
+            speed: 2.6,
+            size: 22,
+            targetX: null,
+            targetY: null,
+            animTimer: 0,
+            bubbles: [], // 이동 시 생기는 파스텔 거품 입자
+            facingLeft: false
+        };
+
+        // 스폰 가능한 보물 및 배경 요소
+        let spawnables = [];
+        let skyWhales = []; // 배경에 부드럽게 오가는 신비로운 고래들
+        let bgStars = [];    // 반짝이는 배경 파스텔 별 입자
+        const maxSpawnables = 18;
+
+        const keys = {};
+        let activeDpadDir = null;
+
+        let audioCtx = null;
+        let bgmInterval = null;
+
+        // --- 초기화 ---
+        window.onload = () => {
+            setupEventListeners();
+            initBackgroundDecorations();
+            spawnInitialItems();
+            requestAnimationFrame(gameLoop);
+            updateUI();
+        };
+
+        function selectCharacter(gender) {
+            gameState.playerGender = gender;
+            const avatar = gender === 'female' ? '🧜‍♀️' : '🧜‍♂️';
+            const name = gender === 'female' ? '바다 소녀' : '바다 소년';
+
+            document.getElementById('player-avatar-display').innerText = avatar;
+            document.getElementById('player-name-display').innerText = name;
+            document.getElementById('char-select-screen').style.display = 'none';
+
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            addLog("노을 빛 바닷속 산호초 모험을 시작합니다!");
+        }
+
+        function setupEventListeners() {
+            window.addEventListener('keydown', (e) => {
+                keys[e.key.toLowerCase()] = true;
+                keys[e.code] = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+                keys[e.code] = false;
+            });
+
+            canvas.addEventListener('click', (e) => {
+                if (gameState.autoExplore) return;
+                const rect = canvas.getBoundingClientRect();
+                player.targetX = e.clientX - rect.left;
+                player.targetY = e.clientY - rect.top;
+            });
+        }
+
+        function handleDpad(dir) {
+            activeDpadDir = dir;
+            player.targetX = null;
+            player.targetY = null;
+        }
+
+        function stopDpad() {
+            activeDpadDir = null;
+        }
+
+        // --- 게임 메인 루프 ---
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function update() {
+            player.speed = player.baseSpeed + stageData[gameState.villageStage - 1].speedBonus;
+            player.animTimer += 0.05;
+
+            let isMoving = false;
+            let oldX = player.x;
+
+            // 1. 자동 탐사 AI
+            if (gameState.autoExplore) {
+                isMoving = updateAutoExplore();
+            } else {
+                // 2. 수동 키보드/D-pad 조작
+                let dx = 0;
+                let dy = 0;
+
+                if (keys['arrowup'] || keys['keyw'] || activeDpadDir === 'up') dy -= 1;
+                if (keys['arrowdown'] || keys['keys'] || activeDpadDir === 'down') dy += 1;
+                if (keys['arrowleft'] || keys['keya'] || activeDpadDir === 'left') dx -= 1;
+                if (keys['arrowright'] || keys['keyd'] || activeDpadDir === 'right') dx += 1;
+
+                if (dx !== 0 || dy !== 0) {
+                    player.targetX = null;
+                    player.targetY = null;
+                    const len = Math.hypot(dx, dy);
+                    player.x += (dx / len) * player.speed;
+                    player.y += (dy / len) * player.speed;
+                    isMoving = true;
+                } else if (player.targetX !== null && player.targetY !== null) {
+                    const tDx = player.targetX - player.x;
+                    const tDy = player.targetY - player.y;
+                    const dist = Math.hypot(tDx, tDy);
+
+                    if (dist < player.speed) {
+                        player.x = player.targetX;
+                        player.y = player.targetY;
+                        player.targetX = null;
+                        player.targetY = null;
+                    } else {
+                        player.x += (tDx / dist) * player.speed;
+                        player.y += (tDy / dist) * player.speed;
+                        isMoving = true;
+                    }
+                }
+            }
+
+            // 바라보는 방향 업데이트
+            if (player.x < oldX) player.facingLeft = true;
+            else if (player.x > oldX) player.facingLeft = false;
+
+            // 캐릭터 이동 시 귀여운 파스텔 물방울 잔상 입자 생성
+            if (isMoving && Math.random() < 0.3) {
+                player.bubbles.push({
+                    x: player.x + (Math.random() * 10 - 5),
+                    y: player.y + 15,
+                    size: Math.random() * 4 + 2,
+                    alpha: 0.8,
+                    color: Math.random() < 0.5 ? '#f2b5d4' : '#c7ceea'
+                });
+            }
+
+            // 물방울 입자 업데이트
+            for (let i = player.bubbles.length - 1; i >= 0; i--) {
+                const b = player.bubbles[i];
+                b.y -= 0.6;
+                b.alpha -= 0.02;
+                if (b.alpha <= 0) player.bubbles.splice(i, 1);
+            }
+
+            // 캐릭터 이동 영역 제한
+            player.x = Math.max(25, Math.min(canvas.width - 25, player.x));
+            player.y = Math.max(25, Math.min(canvas.height - 25, player.y));
+
+            // 충돌 체크
+            checkCollisions();
+
+            // 배경 고래 및 반짝이 업데이트
+            updateBackgroundDecorations();
+
+            // 아이템 리스폰
+            if (spawnables.length < maxSpawnables && Math.random() < 0.035) {
+                spawnItem();
+            }
+        }
+
+        // AI 자동 탐사
+        function updateAutoExplore() {
+            if (spawnables.length === 0) return false;
+
+            let closest = null;
+            let minDist = Infinity;
+
+            for (const item of spawnables) {
+                const dist = Math.hypot(item.x - player.x, item.y - player.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = item;
+                }
+            }
+
+            if (closest) {
+                const dx = closest.x - player.x;
+                const dy = closest.y - player.y;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 2) {
+                    player.x += (dx / dist) * player.speed;
+                    player.y += (dy / dist) * player.speed;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkCollisions() {
+            for (let i = spawnables.length - 1; i >= 0; i--) {
+                const item = spawnables[i];
+                const dist = Math.hypot(item.x - player.x, item.y - player.y);
+
+                if (dist < player.size + item.size) {
+                    if (item.type === 'coral') {
+                        gameState.coralPieces += item.amount;
+                        addLog(`🪸 산호초 조각 ${item.amount}개를 모았습니다!`);
+                        playSfx(480, 0.08);
+                    } else if (item.type === 'chest') {
+                        triggerChestEvent();
+                    } else {
+                        gameState.inventory[item.key]++;
+                        const info = itemData[item.key];
+                        addLog(`${info.icon} [${info.name}]을(를) 모았습니다!`);
+                        playSfx(620, 0.1);
+                    }
+
+                    spawnables.splice(i, 1);
+                    updateUI();
+                }
+            }
+        }
+
+        function triggerChestEvent() {
+            const events = [
+                {
+                    title: "🐳 신비한 하늘 고래의 선물",
+                    desc: "몽환적인 파스텔 고래가 다가와 산호초 조각 35개를 사르르 전해주었습니다!",
+                    action: () => { gameState.coralPieces += 35; },
+                    icon: "🐳"
+                },
+                {
+                    title: "📦 노을빛 해저 보물상자",
+                    desc: "상자 안에서 반짝이는 펄 조개 2개와 예쁜 소라 1개를 발견했습니다!",
+                    action: () => { 
+                        gameState.inventory.pearl += 2; 
+                        gameState.inventory.sora += 1; 
+                    },
+                    icon: "🎁"
+                },
+                {
+                    title: "✨ 별빛 조개 소원",
+                    desc: "무지개 불가사리를 발견했습니다! 상점에 판매할 수 있습니다.",
+                    action: () => { gameState.inventory.starfish += 1; },
+                    icon: "⭐️"
+                }
+            ];
+
+            const event = events[Math.floor(Math.random() * events.length)];
+            event.action();
+            playSfx(820, 0.2);
+            showModal(event.icon, event.title, event.desc);
+            addLog(`✨ [이벤트] ${event.title}`);
+        }
+
+        // --- 스폰 및 배경 시각 요소 ---
+        function spawnInitialItems() {
+            for (let i = 0; i < 12; i++) spawnItem();
+        }
+
+        function spawnItem() {
+            const margin = 50;
+            const x = margin + Math.random() * (canvas.width - margin * 2);
+            const y = margin + Math.random() * (canvas.height - margin * 2);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const currentStage = stageData[gameState.villageStage - 1];
+
+            // 마을 영토 내부 스폰 회피
+            if (Math.hypot(x - centerX, y - centerY) < currentStage.radius + 35) return;
+
+            const rand = Math.random();
+            let newItem = { x, y, size: 14 };
+
+            if (rand < 0.52) {
+                newItem.type = 'coral';
+                newItem.icon = '🪸';
+                newItem.amount = Math.floor(Math.random() * 3) + 1 * gameState.villageStage;
+            } else if (rand < 0.9) {
+                newItem.type = 'treasure';
+                const subRand = Math.random();
+                if (gameState.villageStage >= 5 && subRand > 0.85) newItem.key = 'rareTurtle';
+                else if (gameState.villageStage >= 3 && subRand > 0.65) newItem.key = 'starfish';
+                else if (gameState.villageStage >= 2 && subRand > 0.4) newItem.key = 'pearl';
+                else if (subRand > 0.2) newItem.key = 'sora';
+                else newItem.key = 'shell';
+
+                newItem.icon = itemData[newItem.key].icon;
+            } else {
+                newItem.type = 'chest';
+                newItem.icon = '🎁';
+            }
+
+            spawnables.push(newItem);
+        }
+
+        // 배경 파스텔 고래 & 반짝이는 별가루 연출
+        function initBackgroundDecorations() {
+            skyWhales = [
+                { x: 100, y: 120, speed: 0.35, size: 45, icon: '🐳', floatOffset: 0 },
+                { x: 500, y: 220, speed: 0.25, size: 32, icon: '🐋', floatOffset: Math.PI }
+            ];
+
+            bgStars = [];
+            for (let i = 0; i < 25; i++) {
+                bgStars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 1,
+                    alpha: Math.random(),
+                    speed: Math.random() * 0.02 + 0.01
+                });
+            }
+        }
+
+        function updateBackgroundDecorations() {
+            skyWhales.forEach(w => {
+                w.x += w.speed;
+                w.floatOffset += 0.02;
+                if (w.x > canvas.width + 60) w.x = -60;
+            });
+
+            bgStars.forEach(s => {
+                s.alpha += s.speed;
+                if (s.alpha > 1 || s.alpha < 0.2) s.speed = -s.speed;
+            });
+        }
+
+        // --- 렌더링 (일러스트풍 아기자기한 비주얼) ---
+        function render() {
+            // 1. 파스텔 몽환 노을빛 그라데이션 배경 (첨부 이미지 감성)
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGrad.addColorStop(0, '#f7d6e0');    // 연핑크
+            bgGrad.addColorStop(0.45, '#f2b5d4'); // 따뜻한 분홍
+            bgGrad.addColorStop(0.8, '#c7ceea');  // 연보라
+            bgGrad.addColorStop(1, '#b5ead7');    // 파스텔 민트바다
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 반짝이는 별가루 입자
+            bgStars.forEach(s => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 2. 신비로운 파스텔 배경 고래들
+            ctx.save();
+            skyWhales.forEach(w => {
+                const floatY = w.y + Math.sin(w.floatOffset) * 8;
+                ctx.font = `${w.size}px Pretendard`;
+                ctx.globalAlpha = 0.55;
+                ctx.fillText(w.icon, w.x, floatY);
+            });
+            ctx.restore();
+
+            // 3. 중앙 바다 마을 그리기 (단계별 성장 형태)
+            renderVillage();
+
+            // 4. 스폰된 보물/산호
+            spawnables.forEach(item => {
+                ctx.save();
+                ctx.font = '22px Pretendard';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                // 보물 후광 오라
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.beginPath();
+                ctx.arc(item.x, item.y, item.size + 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillText(item.icon, item.x, item.y);
+                ctx.restore();
+            });
+
+            // 5. 캐릭터 이동 물방울 잔상
+            player.bubbles.forEach(b => {
+                ctx.fillStyle = b.color;
+                ctx.globalAlpha = b.alpha;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            });
+
+            // 6. 플레이어 캐릭터 (생동감 있는 보빙 틸팅 애니메이션)
+            renderPlayer();
+        }
+
+        // 마을 그래픽 (단계에 따라 커짐)
+        function renderVillage() {
+            const stage = stageData[gameState.villageStage - 1];
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+
+            // 외곽 성장 영역 파스텔 발판
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, stage.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([6, 6]);
+            ctx.stroke();
+
+            // 단계별 배치되는 마을 산호/장식물들
+            const decos = stage.decos;
+            const angleStep = (Math.PI * 2) / decos.length;
+            decos.forEach((deco, i) => {
+                const r = stage.radius * 0.65;
+                const angle = i * angleStep;
+                const dx = centerX + Math.cos(angle) * r;
+                const dy = centerY + Math.sin(angle) * r;
+
+                ctx.font = '22px Pretendard';
+                ctx.fillText(deco, dx, dy);
+            });
+
+            // 중앙 핵심 메인 건물/왕관
+            ctx.font = `${Math.min(stage.radius, 70)}px Pretendard`;
+            ctx.fillText(stage.icon, centerX, centerY + 18);
+
+            // 마을 이름 라벨
+            ctx.font = 'bold 15px Pretendard';
+            ctx.fillStyle = '#4a3e4d';
+            ctx.shadowColor = 'rgba(255,255,255,0.8)';
+            ctx.shadowBlur = 6;
+            ctx.fillText(`[ ${stage.name} ]`, centerX, centerY - stage.radius - 12);
+
+            ctx.restore();
+        }
+
+        // 플레이어 캐릭터 렌더링 (헤엄치듯 틸팅되는 부드러운 유기적 움직임)
+        function renderPlayer() {
+            ctx.save();
+            ctx.translate(player.x, player.y);
+
+            // 헤엄치는 느낌의 부드러운 회전(Tilting)과 수직 흔들림(Bobbing)
+            const bobY = Math.sin(player.animTimer * 2) * 3;
+            const tiltAngle = Math.sin(player.animTimer * 2.5) * 0.12;
+
+            ctx.translate(0, bobY);
+            ctx.rotate(tiltAngle);
+
+            if (player.facingLeft) {
+                ctx.scale(-1, 1);
+            }
+
+            // 그림자 후광
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.beginPath();
+            ctx.ellipse(0, 15, 14, 6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 인어/캐릭터 이모지
+            const avatar = gameState.playerGender === 'female' ? '🧜‍♀️' : '🧜‍♂️';
+            ctx.font = '34px Pretendard';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(avatar, 0, 0);
+
+            ctx.restore();
+
+            // 오토 탐사 레이블
+            if (gameState.autoExplore) {
+                ctx.save();
+                ctx.font = 'bold 11px Pretendard';
+                ctx.fillStyle = '#6c5ce7';
+                ctx.textAlign = 'center';
+                ctx.fillText('🤖 자동 탐사중', player.x, player.y - 28);
+                ctx.restore();
+            }
+        }
+
+        // --- UI & 상점 로직 ---
+        function updateUI() {
+            document.getElementById('coral-count').innerText = gameState.coralPieces;
+
+            const currentStage = stageData[gameState.villageStage - 1];
+            document.getElementById('village-title-badge').innerText = currentStage.name;
+            document.getElementById('stage-step-text').innerText = `${gameState.villageStage} / 8 단계`;
+
+            if (gameState.villageStage < 8) {
+                const nextStage = stageData[gameState.villageStage];
+                document.getElementById('next-stage-name').innerText = `${nextStage.name} (으)로 확장`;
+                document.getElementById('next-stage-desc').innerText = `필요 산호초 조각: ${nextStage.cost}개`;
+
+                const upgradeBtn = document.getElementById('upgrade-btn');
+                upgradeBtn.innerText = `마을 확장하기 (${nextStage.cost} 🪸)`;
+                upgradeBtn.disabled = gameState.coralPieces < nextStage.cost;
+            } else {
+                document.getElementById('next-stage-name').innerText = '최고 단계 달성!';
+                document.getElementById('next-stage-desc').innerText = '전설의 바다 왕국이 만개했습니다!';
+                const upgradeBtn = document.getElementById('upgrade-btn');
+                upgradeBtn.innerText = '왕국 완성 ✨';
+                upgradeBtn.disabled = true;
+            }
+
+            renderInventory();
+        }
+
+        function renderInventory() {
+            const container = document.getElementById('inventory-list');
+            container.innerHTML = '';
+
+            let hasItems = false;
+
+            for (const key in gameState.inventory) {
+                const count = gameState.inventory[key];
+                if (count > 0) {
+                    hasItems = true;
+                    const info = itemData[key];
+                    const card = document.createElement('div');
+                    card.className = 'item-card';
+                    card.innerHTML = `
+                        <div>
+                            <span>${info.icon} ${info.name}</span>
+                            <span style="font-weight:bold; color:#6c5ce7; margin-left:4px;">x${count}</span>
+                        </div>
+                        <button class="btn-action" style="width:auto; padding:4px 10px; font-size:0.8rem;" onclick="sellItem('${key}')">판매 (+${count * info.price}🪸)</button>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+
+            if (!hasItems) {
+                container.innerHTML = `<div style="text-align:center; color:#a099aa; font-size:0.85rem; padding:15px;">수집한 보물이 없습니다.<br>헤엄쳐 바닷속 보물을 찾아보세요!</div>`;
+            }
+        }
+
+        function sellItem(key) {
+            const count = gameState.inventory[key];
+            const price = itemData[key].price;
+            const total = count * price;
+
+            gameState.coralPieces += total;
+            gameState.inventory[key] = 0;
+
+            playSfx(540, 0.12);
+            addLog(`💰 ${itemData[key].name} ${count}개를 팔아 ${total} 산호초 조각을 얻었습니다.`);
+            updateUI();
+        }
+
+        function upgradeVillage() {
+            if (gameState.villageStage >= 8) return;
+
+            const nextStage = stageData[gameState.villageStage];
+            if (gameState.coralPieces >= nextStage.cost) {
+                gameState.coralPieces -= nextStage.cost;
+                gameState.villageStage++;
+
+                playSfx(784, 0.3);
+                showModal(nextStage.icon, "마을 확장 완료!", `축하합니다! 마을이 [${nextStage.name}] (으)로 아름답게 성장했습니다!`);
+                addLog(`🎉 마을이 [${nextStage.name}] (으)로 한 단계 커졌습니다!`);
+                updateUI();
+            }
+        }
+
+        function toggleAutoExploration() {
+            gameState.autoExplore = !gameState.autoExplore;
+            const btn = document.getElementById('auto-btn');
+            if (gameState.autoExplore) {
+                btn.classList.add('active');
+                btn.innerText = '🤖 자동 탐사: ON';
+                addLog('🤖 자동 탐사 모드가 켜졌습니다.');
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = '🤖 자동 탐사: OFF';
+                addLog('🤖 수동 헤엄 모드로 전환되었습니다.');
+            }
+        }
+
+        // --- 사운드 Web Audio ---
+        function toggleBGM() {
+            gameState.bgmEnabled = !gameState.bgmEnabled;
+            const btn = document.getElementById('bgm-btn');
+
+            if (gameState.bgmEnabled) {
+                btn.classList.add('active');
+                btn.innerText = '🎵 BGM: ON';
+                startCuteBGM();
+            } else {
+                btn.classList.remove('active');
+                btn.innerText = '🎵 BGM: OFF';
+                stopCuteBGM();
+            }
+        }
+
+        function startCuteBGM() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const notes = [261.63, 329.63, 392.00, 523.25, 440.00, 349.23, 329.63, 392.00];
+            let noteIdx = 0;
+
+            bgmInterval = setInterval(() => {
+                if (!gameState.bgmEnabled) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(notes[noteIdx], audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.28);
+
+                noteIdx = (noteIdx + 1) % notes.length;
+            }, 320);
+        }
+
+        function stopCuteBGM() {
+            if (bgmInterval) clearInterval(bgmInterval);
+        }
+
+        function playSfx(freq, duration) {
+            if (!audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+                gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {}
+        }
+
+        function addLog(msg) {
+            const logBox = document.getElementById('explore-log');
+            const item = document.createElement('div');
+            item.className = 'log-item';
+            item.innerText = msg;
+            logBox.appendChild(item);
+        }
+
+        function showModal(icon, title, desc) {
+            document.getElementById('event-icon').innerText = icon;
+            document.getElementById('event-title').innerText = title;
+            document.getElementById('event-desc').innerText = desc;
+
+            const modal = document.getElementById('event-modal');
+            modal.style.display = 'block';
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('event-modal');
+            modal.classList.remove('active');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    </script>
+</body>
+</html>
